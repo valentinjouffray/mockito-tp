@@ -41,12 +41,8 @@ public class Compte {
      * @param montant somme à débiter
      * @return boolean
      */
-    public boolean debiter(double montant) {
-        if (montant > 0 && montant <= solde) {
-            solde -= montant;
-            return true;
-        }
-        return false; 
+    public void debiter(double montant) {
+        this.solde -= montant;
     }
 
 	/** Dépôt d'une certaine somme sur le compte
@@ -84,5 +80,13 @@ public class Compte {
 	public double getSolde() {
 		return solde;
 	}
-	
+
+	/**
+	 * Setter
+	 *
+	 * @param solde solde
+	 */
+	public void setSolde(double solde) {
+		this.solde = solde;
+	}
 }

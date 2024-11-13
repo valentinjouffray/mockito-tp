@@ -4,29 +4,49 @@ import java.util.List;
 
 import diginamic.entites.Compte;
 import diginamic.entites.Statut;
+import diginamic.exception.BanqueException;
 
 /**
  * Classe de service bancaire
  */
 public class BanqueService {
 	
-    /**
-     * Effectue les opérations bancaires
-     */
+    /** Effectue les opérations bancaire */
     private TransactionProcessor transactionProcessor;
     
-    /**
-     * Stocke les transactions en base de données
-     */
-    private TransactionDao transactionDao; 
+    /** Stocke les transactions en erreur en base de données */
+    private TransactionDao transactionDao;
 
-    /** Dépose un montant sur un compte
+	/** Stocke les comptes en base de données */
+	private CompteDao compteDao;
+
+	/**
+	 * Crée un compte avec un nouveau numéro de compte. Si ce compte existe déjà une exception est lancée.
+	 * @param numero numero du compte
+	 * @param solde solde
+	 * @param email email
+	 * @return Compte
+	 * @throws BanqueException si le compte existe déjà
+	 */
+	public Compte creerCompte(String numero, double solde, String email) throws BanqueException  {
+		Compte compte = compteDao.findByNumero(numero);
+		if (compte!=null){
+			throw new BanqueException("Le compte avec le numéro "+numero+" existe déjà.");
+		}
+		// Création du compte en base de données
+		compte = new Compte(numero, email, solde);
+		compteDao.enregistrer(compte);
+		return compte;
+	}
+
+	/** Dépose un montant sur un compte
      * @param compte compte à créditer
      * @param montant montant
      */
     public void deposer(Compte compte, double montant) {
     	if (transactionProcessor.effectuerDepot(compte, montant)) {
-    		transactionDao.enregistrer(compte, montant, "Dépôt de "+montant+"€", Statut.SUCCES);
+			// Mise à jour du solde du compte
+			compteDao.mettreAJour(compte);
     	}
     	else {
     		traiterErreur(compte, transactionProcessor.getErrors());
@@ -39,7 +59,7 @@ public class BanqueService {
      */
     public void retirer(Compte compte, double montant) {
         if (transactionProcessor.effectuerRetrait(compte, montant)) {
-            transactionDao.enregistrer(compte, montant, "Retrait de "+montant+"€", Statut.SUCCES);
+			compteDao.mettreAJour(compte);
         } 
         else {
     		traiterErreur(compte, transactionProcessor.getErrors());
@@ -47,18 +67,18 @@ public class BanqueService {
     }
 
     /** Effectue un virement d'un compte vers un bénéficiaire
-     * @param compteOri compte depuis lequel le virement s'effectue
+     * @param origine compte depuis lequel le virement s'effectue
      * @param beneficiaire compte bénéficiaire du virement
      * @param montant montant
      */
-    public void virer(Compte compteOri, Compte beneficiaire, double montant) {
+    public void virer(Compte origine, Compte beneficiaire, double montant) {
 
-        if (transactionProcessor.effectuerVirement(compteOri, beneficiaire, montant)) {
-            transactionDao.enregistrer(compteOri, montant, "Virement vers le compte bénéficiaire "+beneficiaire.getNumero(), Statut.SUCCES);
-            transactionDao.enregistrer(beneficiaire, montant, "Virement reçu du compte "+compteOri.getNumero(), Statut.SUCCES);
+        if (transactionProcessor.effectuerVirement(origine, beneficiaire, montant)) {
+			compteDao.mettreAJour(origine);
+			compteDao.mettreAJour(beneficiaire);
         } 
         else {
-    		traiterErreur(compteOri, transactionProcessor.getErrors());
+    		traiterErreur(origine, transactionProcessor.getErrors());
     	}
     }
 
@@ -88,17 +108,38 @@ public class BanqueService {
 	}
 
 	/**
-	 * @return the notificationService
+	 * Getter
+	 *
+	 * @return compteDao
 	 */
-	public TransactionDao getNotificationService() {
+	public CompteDao getCompteDao() {
+		return compteDao;
+	}
+
+	/**
+	 * Setter
+	 *
+	 * @param compteDao compteDao
+	 */
+	public void setCompteDao(CompteDao compteDao) {
+		this.compteDao = compteDao;
+	}
+
+	/**
+	 * Getter
+	 *
+	 * @return transactionDao
+	 */
+	public TransactionDao getTransactionDao() {
 		return transactionDao;
 	}
 
 	/**
-	 * @param notificationService the notificationService to set
+	 * Setter
+	 *
+	 * @param transactionDao transactionDao
 	 */
-	public void setNotificationService(TransactionDao notificationService) {
-		this.transactionDao = notificationService;
+	public void setTransactionDao(TransactionDao transactionDao) {
+		this.transactionDao = transactionDao;
 	}
-    
 }

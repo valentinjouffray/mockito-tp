@@ -5,21 +5,15 @@ import diginamic.entites.Statut;
 import diginamic.entites.Transaction;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 
 /**
  * Stocke les transactions effectuées en base de données
  */
-public class TransactionDao {
+public class TransactionDao extends AbstractDao {
 	
-	/**
-	 * Entity manager factory
-	 */
-	private static EntityManagerFactory emf = Persistence.createEntityManagerFactory("banque");
-	
-	/**
-	 * Entity managet
-	 */
+	/** Entity manager */
 	private EntityManager em = emf.createEntityManager();
 
 	/** Stocke une transaction en base de données pour le compte.
@@ -27,10 +21,13 @@ public class TransactionDao {
 	 * @param montant montant
 	 * @param message message
 	 */
-	public int enregistrer(Compte compte, double montant, String message, Statut statut) {
+	public void enregistrer(Compte compte, double montant, String message, Statut statut) {
+		EntityTransaction entityTransaction = em.getTransaction();
+
 		Transaction transaction = new Transaction(compte, montant, message, statut);
 		em.persist(transaction);
-		return transaction.getId();
+
+		entityTransaction.commit();
 	}
 
 }
