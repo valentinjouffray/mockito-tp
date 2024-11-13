@@ -1,6 +1,7 @@
-*.class
 target/
 .settings/
 bin/
+.idea/
 .classpath
 .project
+*.class
