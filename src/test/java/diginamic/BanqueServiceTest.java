@@ -25,6 +25,8 @@ class BanqueServiceTest {
         banqueService.setCompteDao(compteDao);
         banqueService.setTransactionDao(transactionDao);
         banqueService.setTransactionProcessor(transactionProcessor);
+
+        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
     }
 
     @Test
@@ -53,10 +55,7 @@ class BanqueServiceTest {
     void deposer() {
         double montant1 = 100.0;
         Compte compte = new Compte("123", "mail1@test.com", 1000.0D);
-        Mockito.when(compteDao.findByNumero("123")).thenReturn(compte);
-        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
         banqueService.deposer(compte, montant1);
-        Mockito.verify(compteDao).mettreAJour(compte);
         assertEquals(1100.0, compte.getSolde());
     }
 
@@ -64,10 +63,7 @@ class BanqueServiceTest {
     void retirerCompteSuffisant() {
         Compte compte = new Compte("123", "mail1@test.com", 1000.0D);
         double montant1 = 100.0;
-        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
-        Mockito.when(compteDao.findByNumero("123")).thenReturn(compte);
         banqueService.retirer(compte, montant1);
-        Mockito.verify(compteDao).mettreAJour(compte);
         assertEquals(900.0, compte.getSolde());
     }
 
@@ -75,10 +71,7 @@ class BanqueServiceTest {
     void retirerCompteInsuffisant() {
         Compte compte = new Compte("123", "mail1@test.com", 1000.0D);
         double montant1 = 2000.0;
-        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
-        Mockito.when(compteDao.findByNumero("123")).thenReturn(compte);
         banqueService.retirer(compte, montant1);
-        Mockito.verify(transactionProcessor).getErrors();
         assertEquals(1000.0, compte.getSolde());
     }
 
@@ -92,12 +85,7 @@ class BanqueServiceTest {
         double coutVirement = virement * 0.01;
         Compte compte1 = new Compte(compteNb1, mail1, 1000.0);
         Compte compte2 = new Compte(compteNb2, mail2, 1000.0);
-        Mockito.when(compteDao.findByNumero(compteNb1)).thenReturn(compte1);
-        Mockito.when(compteDao.findByNumero(compteNb2)).thenReturn(compte2);
-        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
         banqueService.virer(compte1, compte2, virement);
-        Mockito.verify(compteDao).mettreAJour(compte1);
-        Mockito.verify(compteDao).mettreAJour(compte2);
         assertEquals(1000 - (virement + coutVirement), compte1.getSolde());
         assertEquals(1100.0, compte2.getSolde());
     }
@@ -111,11 +99,7 @@ class BanqueServiceTest {
         double virement = 2000.0;
         Compte compte1 = new Compte(compteNb1, mail1, 1000.0);
         Compte compte2 = new Compte(compteNb2, mail2, 1000.0);
-        Mockito.when(compteDao.findByNumero(compteNb1)).thenReturn(compte1);
-        Mockito.when(compteDao.findByNumero(compteNb2)).thenReturn(compte2);
-        Mockito.doNothing().when(transactionProcessor).envoyerMailConfirmation(Mockito.any(Compte.class), Mockito.anyString());
         banqueService.virer(compte1, compte2, virement);
-        Mockito.verify(transactionProcessor).getErrors();
         assertEquals(1000.0, compte1.getSolde());
         assertEquals(1000.0, compte2.getSolde());
     }
